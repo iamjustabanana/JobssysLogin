@@ -1,0 +1,319 @@
+<template>
+  <div class="container mt-5">
+    <h1 class="text-center mb-4">教師資料</h1>
+    <div ref="statusMessageDiv" class="alert mt-4 hidden" role="alert">{{ statusMessage }}</div>
+
+    <!-- 姓名查詢區塊 -->
+    <div v-show="showSearchSection" class="mb-3 p-3 border rounded bg-light">
+      <h5 class="mb-3">依姓名查詢教師資料</h5>
+      <div class="input-group">
+        <input v-model="teacherNameSearch" type="text" class="form-control" placeholder="請輸入姓名">
+        <button @click="searchTeacherByName" class="btn btn-primary">查詢</button>
+      </div>
+    </div>
+
+    <!-- 教師資料表單 -->
+    <form v-show="showTeacherForm" class="mt-4 p-4 border rounded bg-light" @submit.prevent="submitTeacherForm">
+      <h5 class="mb-3">教師詳細資料</h5>
+      <input type="hidden" v-model="teacherForm.id">
+      <input type="hidden" v-model="teacherForm.lineId">
+      <div class="mb-3">
+        <label for="name" class="form-label">姓名:</label>
+        <input v-model="teacherForm.name" type="text" class="form-control" id="name" name="name" required>
+      </div>
+      <div class="mb-3">
+        <label for="phone" class="form-label">電話:</label>
+        <input v-model="teacherForm.phone" type="text" class="form-control" id="phone" name="phone" required>
+      </div>
+      <div class="mb-3">
+        <label for="idCard" class="form-label">身分證:</label>
+        <input v-model="teacherForm.idCard" type="text" class="form-control" id="idCard" name="idCard" required>
+      </div>
+      <div class="mb-3">
+        <label for="highestEducation" class="form-label">最高學歷:</label>
+        <input v-model="teacherForm.highestEducation" type="text" class="form-control" id="highestEducation" name="highestEducation">
+      </div>
+      <div class="mb-3">
+        <label for="secondaryEducation" class="form-label">次高學歷:</label>
+        <input v-model="teacherForm.secondaryEducation" type="text" class="form-control" id="secondaryEducation" name="secondaryEducation">
+      </div>
+      <div class="mb-3">
+        <label for="experienceDescription" class="form-label">學經歷描述:</label>
+        <textarea v-model="teacherForm.experienceDescription" class="form-control" id="experienceDescription" name="experienceDescription" rows="3"></textarea>
+      </div>
+      <button type="submit" class="btn btn-success mt-3">送出</button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue';
+
+const isDev = window.location.hostname === 'localhost' || window.location.hostname === '10.0.4.39';
+const API_URL = isDev ? import.meta.env.VITE_API_URL_DEV : import.meta.env.VITE_API_URL_PROD;
+const LIFF_ID = import.meta.env.VITE_LIFF_ID;
+
+const statusMessage = ref('');
+const statusType = ref('');
+const statusMessageDiv = ref(null);
+const showSearchSection = ref(false);
+const showTeacherForm = ref(false);
+const teacherNameSearch = ref('');
+const teacherForm = reactive({
+  id: '',
+  lineId: '',
+  name: '',
+  phone: '',
+  idCard: '',
+  highestEducation: '',
+  secondaryEducation: '',
+  experienceDescription: ''
+});
+let currentLineId = null;
+
+function displayMessage(message, type = 'info') {
+  statusMessage.value = message;
+  statusType.value = type;
+  if (statusMessageDiv.value) {
+    statusMessageDiv.value.classList.remove('hidden', 'alert-success', 'alert-danger', 'alert-info');
+    if (type === 'success') statusMessageDiv.value.classList.add('alert-success');
+    else if (type === 'error') statusMessageDiv.value.classList.add('alert-danger');
+    else if (type === 'info') statusMessageDiv.value.classList.add('alert-info');
+  }
+}
+
+function saveTeacherInfoToLocalStorage(teacherRecord, token) {
+  localStorage.setItem('teacherInfo', JSON.stringify({ ...teacherRecord, token }));
+}
+function getJwtToken() {
+  const teacherInfo = JSON.parse(localStorage.getItem('teacherInfo'));
+  return teacherInfo ? teacherInfo.token : null;
+}
+function fillTeacherForm(teacher) {
+  if (teacher) {
+    teacherForm.id = teacher.id || '';
+    teacherForm.name = teacher.name || '';
+    teacherForm.phone = teacher.phone || '';
+    teacherForm.idCard = teacher.idCard || '';
+    teacherForm.highestEducation = teacher.highestEducation || '';
+    teacherForm.secondaryEducation = teacher.secondaryEducation || '';
+    teacherForm.experienceDescription = teacher.experienceDescription || '';
+    teacherForm.lineId = teacher.lineId || currentLineId || '';
+  } else {
+    teacherForm.id = '';
+    teacherForm.name = '';
+    teacherForm.phone = '';
+    teacherForm.idCard = '';
+    teacherForm.highestEducation = '';
+    teacherForm.secondaryEducation = '';
+    teacherForm.experienceDescription = '';
+    teacherForm.lineId = currentLineId || '';
+  }
+}
+
+async function queryTeacherByLineId(lineId) {
+  const token = getJwtToken();
+  if (!token) {
+    displayMessage('未找到登入憑證，請重新登入。', 'error');
+    setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
+    return;
+  }
+  try {
+    const response = await fetch(`${API_URL}/api/teachers/line/${lineId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    let data = {};
+    try { data = await response.json(); } catch { data = { error: '非預期的響應格式或空響應' }; }
+    if (response.ok && data.teacherRecord && data.teacherRecord.id) {
+      displayMessage('已找到您的教師資料，請編輯。', 'success');
+      fillTeacherForm(data.teacherRecord);
+      showSearchSection.value = true;
+      showTeacherForm.value = true;
+    } else if (response.status === 404) {
+      displayMessage('您的 LINE ID 尚未綁定教師資料，請嘗試依姓名查詢或填寫表單新增。', 'info');
+      showSearchSection.value = true;
+      showTeacherForm.value = true;
+      fillTeacherForm(null);
+    } else {
+      displayMessage(`查詢教師資料失敗: ${data.error || '未知錯誤'}`, 'error');
+      showSearchSection.value = true;
+      showTeacherForm.value = true;
+      fillTeacherForm(null);
+    }
+  } catch (error) {
+    displayMessage(`與後端通訊失敗: ${error.message}`, 'error');
+    showSearchSection.value = true;
+    showTeacherForm.value = true;
+    fillTeacherForm(null);
+  }
+}
+
+async function searchTeacherByName() {
+  if (!teacherNameSearch.value) {
+    displayMessage('請輸入姓名進行查詢。', 'info');
+    return;
+  }
+  const token = getJwtToken();
+  if (!token) {
+    displayMessage('未找到登入憑證，請重新登入。', 'error');
+    setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
+    return;
+  }
+  try {
+    const response = await fetch(`${API_URL}/api/teachers/name/${encodeURIComponent(teacherNameSearch.value)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    let data = {};
+    try { data = await response.json(); } catch { data = { error: '非預期的響應格式或空響應' }; }
+    if (response.ok && data.teacherRecord && data.teacherRecord.id) {
+      displayMessage('已找到教師資料。', 'success');
+      fillTeacherForm(data.teacherRecord);
+    } else if (response.status === 404) {
+      displayMessage('未找到符合姓名的教師資料，請填寫表單新增。', 'info');
+      fillTeacherForm(null);
+    } else {
+      displayMessage(`查詢教師資料失敗: ${data.error || '未知錯誤'}`, 'error');
+      fillTeacherForm(null);
+    }
+  } catch (error) {
+    displayMessage(`與後端通訊失敗: ${error.message}`, 'error');
+    fillTeacherForm(null);
+  }
+}
+
+async function submitTeacherForm() {
+  const token = getJwtToken();
+  if (!token) {
+    displayMessage('未找到登入憑證，請重新登入。', 'error');
+    setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
+    return;
+  }
+  try {
+    let response;
+    if (teacherForm.id) {
+      response = await fetch(`${API_URL}/api/teachers/${teacherForm.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(teacherForm)
+      });
+    } else {
+      response = await fetch(`${API_URL}/api/teachers`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(teacherForm)
+      });
+    }
+    const result = await response.json();
+    if (response.ok) {
+      displayMessage(teacherForm.id ? '教師資料更新成功！' : '教師資料新增成功並綁定 LINE ID！', 'success');
+      if (result.teacherRecord && result.token) {
+        saveTeacherInfoToLocalStorage(result.teacherRecord, result.token);
+        window.location.href = '/teacherDashboard.html';
+      } else {
+        displayMessage('操作成功但無法獲取完整的教師資料或 Token，請手動刷新或檢查後端響應。', 'warning');
+      }
+    } else {
+      displayMessage(`操作失敗: ${result.error || '未知錯誤'}`, 'error');
+    }
+  } catch (error) {
+    displayMessage(`與後端通訊失敗: ${error.message}`, 'error');
+  }
+}
+
+onMounted(async () => {
+  // 動態載入 LIFF SDK
+  if (!window.liff) {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+  if (!window.liff) {
+    displayMessage('LIFF SDK 載入失敗', 'error');
+    return;
+  }
+  window.liff.init({ liffId: LIFF_ID })
+    .then(() => {
+      if (!window.liff.isLoggedIn()) {
+        displayMessage('尚未登入 LINE，正在跳轉至登入頁面...', 'info');
+        setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
+        return;
+      }
+      return window.liff.getProfile();
+    })
+    .then(profile => {
+      if (profile) {
+        currentLineId = profile.userId;
+        teacherForm.lineId = currentLineId;
+        displayMessage('LINE 登入成功！正在載入您的資料...', 'info');
+        queryTeacherByLineId(currentLineId);
+      } else {
+        displayMessage('無法獲取 LINE 個人資料，請重新登入。', 'error');
+        setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
+      }
+    })
+    .catch(err => {
+      displayMessage(`LIFF 初始化失敗: ${err.message}，請重新登入。`, 'error');
+      setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
+    });
+});
+</script>
+
+<style scoped>
+@import 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css';
+@import 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css';
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f0f2f5;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.container {
+  background-color: #ffffff;
+  padding: 2.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+.form-label {
+  font-weight: bold;
+}
+.message {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+.message.success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+.message.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.message.info {
+  background-color: #e0f2fe;
+  color: #0c4a6e;
+}
+.hidden {
+  display: none;
+}
+</style>
