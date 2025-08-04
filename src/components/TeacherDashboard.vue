@@ -1,30 +1,35 @@
 <template>
-  <div class="container mt-5">
-    <h1 class="text-center mb-4">教師功能面板</h1>
-    <div id="statusMessage" class="alert mt-4 hidden" role="alert"></div>
-    <p class="text-center text-muted">歡迎您，<span id="teacherNameDisplay" class="fw-bold"></span>！</p>
-    <p class="text-center text-muted">您的 LINE ID: <span id="lineIdDisplay"></span></p>
-
-    <div class="row mt-4">
-      <div class="col-md-6 mb-3">
-        <a href="/teacherProfile.html" class="btn btn-primary w-100 py-3">
-          <i class="bi bi-person-circle"></i> 維護個人資料
-        </a>
+  <div class="dashboard-bg min-vh-100 d-flex flex-column justify-content-center align-items-center">
+    <div class="dashboard-card p-4 shadow-lg rounded-4 w-100" style="max-width: 480px;">
+      <h1 class="text-center mb-3 dashboard-title">教師功能面板</h1>
+      <div id="statusMessage" class="alert mt-3 hidden" role="alert"></div>
+      <div class="text-center mb-2">
+        <span class="fw-bold welcome-text">歡迎您，<span id="teacherNameDisplay"></span>！</span>
       </div>
-      <div class="col-md-6 mb-3">
-        <a href="#" class="btn btn-info w-100 py-3 text-white">
-          <i class="bi bi-book"></i> 管理課程
-        </a>
+      <div class="text-center mb-3">
+        <span class="text-muted">您的 LINE ID: <span id="lineIdDisplay"></span></span>
       </div>
-      <div class="col-md-6 mb-3">
-        <a href="#" class="btn btn-warning w-100 py-3">
-          <i class="bi bi-calendar-check"></i> 查看試聽申請
-        </a>
-      </div>
-      <div class="col-md-6 mb-3">
-        <button id="logoutBtn" class="btn btn-danger w-100 py-3">
-          <i class="bi bi-box-arrow-right"></i> 登出
-        </button>
+      <div class="row g-3">
+        <div class="col-12">
+          <a href="/teacherProfile.html" class="btn dashboard-btn-primary w-100 py-3">
+            <i class="bi bi-person-circle"></i> 維護個人資料
+          </a>
+        </div>
+        <div class="col-12">
+          <a href="#" class="btn dashboard-btn-info w-100 py-3">
+            <i class="bi bi-book"></i> 管理課程
+          </a>
+        </div>
+        <div class="col-12">
+          <a href="#" class="btn dashboard-btn-warning w-100 py-3">
+            <i class="bi bi-calendar-check"></i> 查看試聽申請
+          </a>
+        </div>
+        <div class="col-12">
+          <button id="logoutBtn" class="btn dashboard-btn-danger w-100 py-3">
+            <i class="bi bi-box-arrow-right"></i> 登出
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -200,36 +205,49 @@ export default {
 @import 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css';
 @import 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css';
 
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: #f0f2f5;
-  padding-top: 20px;
-  padding-bottom: 20px;
+.dashboard-bg {
+  background: linear-gradient(135deg, #e0e7ff 0%, #f0f2f5 100%);
 }
-.container {
-  background-color: #ffffff;
-  padding: 2.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+.dashboard-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  border: 1px solid #e0e7ff;
 }
-.message {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
-  word-break: break-all;
+.dashboard-title {
+  color: #3b82f6;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
-.message.success {
-  background-color: #d1fae5;
-  color: #065f46;
+.welcome-text {
+  color: #6366f1;
+  font-size: 1.1rem;
 }
-.message.error {
-  background-color: #fee2e2;
-  color: #991b1b;
+.dashboard-btn-primary {
+  background: linear-gradient(90deg, #6366f1 0%, #3b82f6 100%);
+  color: #fff;
+  border: none;
 }
-.message.info {
-  background-color: #e0f2fe;
-  color: #0c4a6e;
+.dashboard-btn-info {
+  background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%);
+  color: #fff;
+  border: none;
+}
+.dashboard-btn-warning {
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e42 100%);
+  color: #fff;
+  border: none;
+}
+.dashboard-btn-danger {
+  background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+  color: #fff;
+  border: none;
+}
+.dashboard-btn-primary:hover,
+.dashboard-btn-info:hover,
+.dashboard-btn-warning:hover,
+.dashboard-btn-danger:hover {
+  filter: brightness(0.95);
 }
 .hidden {
   display: none;
