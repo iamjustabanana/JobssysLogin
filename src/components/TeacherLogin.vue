@@ -62,6 +62,7 @@ export default {
 
     const loginWithLine = async () => {
       await ensureLiffReady();
+      console.log('[LINE Login] redirectUri:', LINE_REDIRECT_URI);
       if (window.liff && liffReady) {
         try {
           window.liff.login({ redirectUri: LINE_REDIRECT_URI });
@@ -75,8 +76,9 @@ export default {
 
     onMounted(async () => {
       await ensureLiffReady();
+      console.log('[LIFF] LIFF_ID:',LIFF_ID);
       if (window.liff && liffReady) {
-        console.log('teacherLogin.vue: LIFF_ID before liff.init() =', LIFF_ID);
+        console.log('[LIFF] liff.init liffId:',LIFF_ID);
         window.liff.init({ liffId: LIFF_ID })
           .then(() => {
             console.log('teacherLogin.vue: LIFF initialized successfully.');
