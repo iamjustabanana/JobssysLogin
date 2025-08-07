@@ -1,62 +1,43 @@
 <template>
   <div class="dashboard-container">
-    <h1>教師儀表板</h1>
+    <h1 class="mb-4">教師功能面板</h1>
     <div :class="['status', statusClass]">{{ statusMessage }}</div>
-    <div v-if="showProfile" id="profile-area">
-      <div class="profile">
-        <img :src="userPicture" alt="大頭貼" />
-        <h2>{{ userName }}</h2>
+    <div class="row g-4 justify-content-center">
+      <div class="col-12 col-md-8 mb-3">
+        <button class="btn btn-primary w-100 py-3" @click="goToProfile">
+          <i class="bi bi-person-circle"></i> 教師資料
+        </button>
       </div>
-      <p>您已成功登入 LIFF 應用程式。</p>
-      <hr />
-      <p>此連結會測試在 LIFF 應用程式內跳轉到另一頁面後，是否仍能記得您的登入狀態。</p>
-      <button @click="goToTestPage">前往測試頁面</button>
+      <div class="col-12 col-md-8 mb-3">
+        <button class="btn btn-info w-100 py-3 text-white" @click="goToTrialApplication">
+          <i class="bi bi-calendar-check"></i> 教師試聽申請
+        </button>
+      </div>
+      <div class="col-12 col-md-8 mb-3">
+        <button class="btn btn-warning w-100 py-3" @click="goToAttendance">
+          <i class="bi bi-clipboard-check"></i> 教師點名
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import liff from '@line/liff';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+const statusMessage = ref('');
+const statusClass = ref('');
+const router = useRouter();
 
-const liffId = '2007768647-wdEl9d4G'; // 你的 LIFF ID
-
-const statusMessage = ref('正在初始化 LIFF...');
-const statusClass = ref('loading');
-const showProfile = ref(false);
-const userPicture = ref('');
-const userName = ref('');
-
-const goToTestPage = () => {
-  liff.openWindow({
-    url: './testPage.html',
-    external: false
-  });
-};
-
-onMounted(async () => {
-  try {
-    await liff.init({ liffId });
-    statusMessage.value = 'LIFF 初始化成功。';
-    statusClass.value = 'loading';
-    console.log('liff.isLoggedIn()', liff.isLoggedIn());
-    console.log('liff.getAccessToken()', liff.getAccessToken());
-    if (!liff.isLoggedIn()) {
-      statusMessage.value = '尚未登入，正在重新導向至登入頁面...';
-      liff.login();
-    } else {
-      const profile = await liff.getProfile();
-      userPicture.value = profile.pictureUrl;
-      userName.value = `歡迎，${profile.displayName}`;
-      statusMessage.value = '';
-      showProfile.value = true;
-    }
-  } catch (err) {
-    console.error('LIFF 初始化或登入失敗', err);
-    statusClass.value = 'error';
-    statusMessage.value = `LIFF 發生錯誤：${err.message}`;
-  } 
-});
+function goToProfile() {
+  router.push('/teacherprofile');
+}
+function goToTrialApplication() {
+  router.push('/teachertrialapplication');
+}
+function goToAttendance() {
+  router.push('/teacherattendance');
+}
 </script>
 
 <style scoped>
