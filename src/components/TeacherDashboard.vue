@@ -39,6 +39,8 @@ onMounted(async () => {
     await liff.init({ liffId });
     statusMessage.value = 'LIFF 初始化成功。';
     statusClass.value = 'loading';
+    console.log('liff.isLoggedIn()', liff.isLoggedIn());
+    console.log('liff.getAccessToken()', liff.getAccessToken());
     if (!liff.isLoggedIn()) {
       statusMessage.value = '尚未登入，正在重新導向至登入頁面...';
       liff.login();
@@ -53,7 +55,7 @@ onMounted(async () => {
     console.error('LIFF 初始化或登入失敗', err);
     statusClass.value = 'error';
     statusMessage.value = `LIFF 發生錯誤：${err.message}`;
-  }
+  } 
 });
 </script>
 
