@@ -106,8 +106,11 @@ function fillTeacherForm(teacher) {
 
 async function fetchTeacherProfile() {
   const token = getJwtToken();
+  console.log('[TeacherProfile] localStorage teacherInfo:', localStorage.getItem('teacherInfo'));
+  console.log('[TeacherProfile] 取得 token:', token);
   if (!token) {
     displayMessage('未找到登入憑證，請重新登入。', 'error');
+    console.warn('[TeacherProfile] 未找到登入憑證，跳回登入頁');
     setTimeout(() => { window.location.href = '/teacherlogin'; }, 3000);
     return;
   }
@@ -120,15 +123,18 @@ async function fetchTeacherProfile() {
       }
     });
     const data = await response.json();
+    console.log('[TeacherProfile] API 回傳:', data);
     if (response.ok && data.teacherRecord) {
       fillTeacherForm(data.teacherRecord);
       showTeacherForm.value = true;
       displayMessage('已載入教師資料。', 'success');
     } else {
       displayMessage(`查詢教師資料失敗: ${data.error || '未知錯誤'}`, 'error');
+      console.warn('[TeacherProfile] 查詢教師資料失敗:', data.error || '未知錯誤');
     }
   } catch (error) {
     displayMessage(`與後端通訊失敗: ${error.message}`, 'error');
+    console.error('[TeacherProfile] API 通訊失敗:', error);
   }
 }
 
