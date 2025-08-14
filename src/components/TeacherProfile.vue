@@ -115,7 +115,7 @@ async function fetchTeacherProfile() {
     return;
   }
   try {
-    const response = await fetch(`${API_URL}/api/teachers/profile`, {
+    const response = await fetch(`${API_URL}/api/teachers/teacher-profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
