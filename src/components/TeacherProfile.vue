@@ -110,8 +110,8 @@ async function fetchTeacherProfile() {
   console.log('[TeacherProfile] 取得 token:', token);
   if (!token) {
     displayMessage('未找到登入憑證，請重新登入。', 'error');
-    console.warn('[TeacherProfile] 未找到登入憑證，跳回登入頁');
-    setTimeout(() => { window.location.href = '/teacherlogin'; }, 3000);
+    console.warn('[TeacherProfile] 未找到登入憑證，原本會跳回登入頁，已註解跳轉方便 debug');
+    // setTimeout(() => { window.location.href = '/teacherlogin'; }, 3000);
     return;
   }
   try {
