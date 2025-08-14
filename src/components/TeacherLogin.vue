@@ -76,14 +76,22 @@ export default {
 
     onMounted(async () => {
       await ensureLiffReady();
-      console.log('[LIFF] LIFF_ID:',LIFF_ID);
+      console.log('[LIFF] LIFF_ID:', LIFF_ID);
+      // 先判斷 localStorage 是否有 teacherInfo/token
+      const teacherInfo = JSON.parse(localStorage.getItem('teacherInfo') || 'null');
+      if (teacherInfo && teacherInfo.token) {
+        console.log('localStorage teacherInfo/token 已存在，自動跳轉 dashboard');
+        window.location.href = '/teacherdashboard';
+        return;
+      }
+      // 再判斷 LIFF 登入狀態
       if (window.liff && liffReady) {
-        console.log('[LIFF] liff.init liffId:',LIFF_ID);
+        console.log('[LIFF] liff.init liffId:', LIFF_ID);
         window.liff.init({ liffId: LIFF_ID })
           .then(() => {
             console.log('teacherLogin.vue: LIFF initialized successfully.');
             if (window.liff.isLoggedIn()) {
-              window.location.href = '/teacherDashboard.html';
+              window.location.href = '/teacherdashboard';
             } else {
               displayMessage('請點擊按鈕使用 LINE 登入', 'info');
             }
