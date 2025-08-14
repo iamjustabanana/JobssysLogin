@@ -47,18 +47,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-
 const isDev = window.location.hostname === 'localhost' || window.location.hostname === '10.0.4.39';
 const API_URL = isDev ? import.meta.env.VITE_API_URL_DEV : import.meta.env.VITE_API_URL_PROD;
-const LIFF_ID = import.meta.env.VITE_LIFF_ID;
 
+import { ref, reactive, onMounted } from 'vue';
 const statusMessage = ref('');
 const statusType = ref('');
 const statusMessageDiv = ref(null);
-const showSearchSection = ref(false);
 const showTeacherForm = ref(false);
-const teacherNameSearch = ref('');
 const teacherForm = reactive({
   id: '',
   lineId: '',
@@ -69,7 +65,6 @@ const teacherForm = reactive({
   secondaryEducation: '',
   experienceDescription: ''
 });
-let currentLineId = null;
 
 function displayMessage(message, type = 'info') {
   statusMessage.value = message;
@@ -82,13 +77,11 @@ function displayMessage(message, type = 'info') {
   }
 }
 
-function saveTeacherInfoToLocalStorage(teacherRecord, token) {
-  localStorage.setItem('teacherInfo', JSON.stringify({ ...teacherRecord, token }));
-}
 function getJwtToken() {
   const teacherInfo = JSON.parse(localStorage.getItem('teacherInfo'));
   return teacherInfo ? teacherInfo.token : null;
 }
+
 function fillTeacherForm(teacher) {
   if (teacher) {
     teacherForm.id = teacher.id || '';
@@ -98,7 +91,7 @@ function fillTeacherForm(teacher) {
     teacherForm.highestEducation = teacher.highestEducation || '';
     teacherForm.secondaryEducation = teacher.secondaryEducation || '';
     teacherForm.experienceDescription = teacher.experienceDescription || '';
-    teacherForm.lineId = teacher.lineId || currentLineId || '';
+    teacherForm.lineId = teacher.lineId || '';
   } else {
     teacherForm.id = '';
     teacherForm.name = '';
@@ -107,172 +100,40 @@ function fillTeacherForm(teacher) {
     teacherForm.highestEducation = '';
     teacherForm.secondaryEducation = '';
     teacherForm.experienceDescription = '';
-    teacherForm.lineId = currentLineId || '';
+    teacherForm.lineId = '';
   }
 }
 
-async function queryTeacherByLineId(lineId) {
+async function fetchTeacherProfile() {
   const token = getJwtToken();
   if (!token) {
     displayMessage('未找到登入憑證，請重新登入。', 'error');
-    setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
+    setTimeout(() => { window.location.href = '/teacherlogin'; }, 3000);
     return;
   }
   try {
-    const response = await fetch(`${API_URL}/api/teachers/line/${lineId}`, {
+    const response = await fetch(`${API_URL}/api/teachers/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
-    let data = {};
-    try { data = await response.json(); } catch { data = { error: '非預期的響應格式或空響應' }; }
-    if (response.ok && data.teacherRecord && data.teacherRecord.id) {
-      displayMessage('已找到您的教師資料，請編輯。', 'success');
+    const data = await response.json();
+    if (response.ok && data.teacherRecord) {
       fillTeacherForm(data.teacherRecord);
-      showSearchSection.value = true;
       showTeacherForm.value = true;
-    } else if (response.status === 404) {
-      displayMessage('您的 LINE ID 尚未綁定教師資料，請嘗試依姓名查詢或填寫表單新增。', 'info');
-      showSearchSection.value = true;
-      showTeacherForm.value = true;
-      fillTeacherForm(null);
+      displayMessage('已載入教師資料。', 'success');
     } else {
       displayMessage(`查詢教師資料失敗: ${data.error || '未知錯誤'}`, 'error');
-      showSearchSection.value = true;
-      showTeacherForm.value = true;
-      fillTeacherForm(null);
-    }
-  } catch (error) {
-    displayMessage(`與後端通訊失敗: ${error.message}`, 'error');
-    showSearchSection.value = true;
-    showTeacherForm.value = true;
-    fillTeacherForm(null);
-  }
-}
-
-async function searchTeacherByName() {
-  if (!teacherNameSearch.value) {
-    displayMessage('請輸入姓名進行查詢。', 'info');
-    return;
-  }
-  const token = getJwtToken();
-  if (!token) {
-    displayMessage('未找到登入憑證，請重新登入。', 'error');
-    setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
-    return;
-  }
-  try {
-    const response = await fetch(`${API_URL}/api/teachers/name/${encodeURIComponent(teacherNameSearch.value)}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    let data = {};
-    try { data = await response.json(); } catch { data = { error: '非預期的響應格式或空響應' }; }
-    if (response.ok && data.teacherRecord && data.teacherRecord.id) {
-      displayMessage('已找到教師資料。', 'success');
-      fillTeacherForm(data.teacherRecord);
-    } else if (response.status === 404) {
-      displayMessage('未找到符合姓名的教師資料，請填寫表單新增。', 'info');
-      fillTeacherForm(null);
-    } else {
-      displayMessage(`查詢教師資料失敗: ${data.error || '未知錯誤'}`, 'error');
-      fillTeacherForm(null);
-    }
-  } catch (error) {
-    displayMessage(`與後端通訊失敗: ${error.message}`, 'error');
-    fillTeacherForm(null);
-  }
-}
-
-async function submitTeacherForm() {
-  const token = getJwtToken();
-  if (!token) {
-    displayMessage('未找到登入憑證，請重新登入。', 'error');
-    setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
-    return;
-  }
-  try {
-    let response;
-    if (teacherForm.id) {
-      response = await fetch(`${API_URL}/api/teachers/${teacherForm.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(teacherForm)
-      });
-    } else {
-      response = await fetch(`${API_URL}/api/teachers`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(teacherForm)
-      });
-    }
-    const result = await response.json();
-    if (response.ok) {
-      displayMessage(teacherForm.id ? '教師資料更新成功！' : '教師資料新增成功並綁定 LINE ID！', 'success');
-      if (result.teacherRecord && result.token) {
-        saveTeacherInfoToLocalStorage(result.teacherRecord, result.token);
-        window.location.href = '/teacherDashboard.html';
-      } else {
-        displayMessage('操作成功但無法獲取完整的教師資料或 Token，請手動刷新或檢查後端響應。', 'warning');
-      }
-    } else {
-      displayMessage(`操作失敗: ${result.error || '未知錯誤'}`, 'error');
     }
   } catch (error) {
     displayMessage(`與後端通訊失敗: ${error.message}`, 'error');
   }
 }
 
-onMounted(async () => {
-  // 動態載入 LIFF SDK
-  if (!window.liff) {
-    await new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-  }
-  if (!window.liff) {
-    displayMessage('LIFF SDK 載入失敗', 'error');
-    return;
-  }
-  window.liff.init({ liffId: LIFF_ID })
-    .then(() => {
-      if (!window.liff.isLoggedIn()) {
-        displayMessage('尚未登入 LINE，正在跳轉至登入頁面...', 'info');
-        setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
-        return;
-      }
-      return window.liff.getProfile();
-    })
-    .then(profile => {
-      if (profile) {
-        currentLineId = profile.userId;
-        teacherForm.lineId = currentLineId;
-        displayMessage('LINE 登入成功！正在載入您的資料...', 'info');
-        queryTeacherByLineId(currentLineId);
-      } else {
-        displayMessage('無法獲取 LINE 個人資料，請重新登入。', 'error');
-        setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
-      }
-    })
-    .catch(err => {
-      displayMessage(`LIFF 初始化失敗: ${err.message}，請重新登入。`, 'error');
-      setTimeout(() => { window.location.href = '/teacherLogin.html'; }, 60000);
-    });
+onMounted(() => {
+  fetchTeacherProfile();
 });
 </script>
 
